@@ -21,5 +21,6 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true # Will only build if this is not here
-          tags: |
-            truehostcloud/url2image:latest
+          tags: truehostcloud/url2image:latest
+          cache-from: type=registry,ref=truehostcloud/url2image:latest
+          cache-to: type=inline
