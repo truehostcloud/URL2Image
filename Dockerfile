@@ -1,5 +1,6 @@
 FROM python:latest
 
+WORKDIR /app
 RUN mkdir /app/tmp_images
 
 RUN pip install -r /app/requirements.txt
@@ -12,7 +13,6 @@ COPY ./.git-commit /app/
 COPY ./.git-branch /app/
 COPY ./tests/ /app/tests/
 COPY ./pytest.ini /app/
-WORKDIR /app
 EXPOSE 5000
 
 ARG GIT_COMMIT=unspecified
