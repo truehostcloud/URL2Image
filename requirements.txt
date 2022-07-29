@@ -7,3 +7,4 @@ xvfbwrapper
 selenium
 flask-jwt-extended
 Pillow
+python-dotenv==0.19.1

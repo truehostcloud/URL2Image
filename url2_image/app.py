@@ -5,9 +5,9 @@ import os
 import io
 import pathlib
 import hashlib
+import time
 from selenium.webdriver.firefox.options import Options
 from selenium import webdriver
-from xvfbwrapper import Xvfb
 from flask import Flask, request, jsonify, send_file
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -37,6 +37,7 @@ app.config["JWT_SECRET_KEY"] = JWT_SECRET_KEY
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = JWT_ACCESS_TOKEN_EXPIRES
 app.config["SELENIUM_WEB_DRIVER_URL"] = SELENIUM_WEB_DRIVER_URL
 jwt = JWTManager(app)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 VERSION = "v0.1"
 
@@ -139,22 +140,24 @@ def get_image():
     req_height = 1080
     if request.args.get("height") is not None:
         req_height = int(request.args.get("height"))
+    delay = 0
+    if request.args.get("delay") is not None:
+        delay = int(request.args.get("delay"))/1000
 
     firefox_opts = Options()
     firefox_opts.add_argument(f"--width={req_width}")
     firefox_opts.add_argument(f"--height={req_height}")
     firefox_opts.add_argument("--disable-gpu")
-
-    d = Xvfb(width=req_width, height=req_height)
-    d.start()
     browser = webdriver.Remote(command_executor=SELENIUM_WEB_DRIVER_URL)
 
     browser.get(req_url)
     fname = hashlib.md5(req_url.encode("utf-8")).hexdigest()
-    destination = "/tmp_images/" + fname + ".png"
+    destination = os.path.join(BASE_DIR, "tmp_images", fname + ".png")
 
     if request.args.get("fullPage") in ["True", "true"]:
-        browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        longest_height = browser.find_element("tag name", "body").size["height"] + 1000
+        browser.set_window_size(req_width, longest_height)
+    time.sleep(delay)
     if browser.save_screenshot(destination):
         print("File saved in the destination filename")
     browser.quit()
@@ -173,7 +176,7 @@ def get_image():
     if req_format == "jpg":
         im = Image.open(destination)
         rgb_im = im.convert("RGB")
-        destination = "/tmp_images/" + fname + ".jpg"
+        destination = os.path.join(BASE_DIR, "tmp_images", fname + ".jpg")
         rgb_im.save(destination, quality=req_quality, optimize=True, progressive=True)
         with open(destination, "rb") as f:
             return send_file(
