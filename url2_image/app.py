@@ -103,7 +103,7 @@ def get_version():
     return "Bad Request", 400
 
 
-@app.route("/getImage")
+@app.route("/capture")
 @conditional_decorator(jwt_required, USE_LOGIN)
 def get_image():
     """
