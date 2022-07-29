@@ -5,7 +5,7 @@ import os
 import io
 import pathlib
 import hashlib
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.firefox.options import Options
 from selenium import webdriver
 from xvfbwrapper import Xvfb
 from flask import Flask, request, jsonify, send_file
@@ -27,6 +27,7 @@ from url2_image_env import (
     FLASK_DEBUG,
     USE_LOGIN,
     JWT_ACCESS_TOKEN_EXPIRES,
+    SELENIUM_WEB_DRIVER_URL,
 )
 from login_util import conditional_decorator
 
@@ -34,6 +35,7 @@ from login_util import conditional_decorator
 app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = JWT_SECRET_KEY
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = JWT_ACCESS_TOKEN_EXPIRES
+app.config["SELENIUM_WEB_DRIVER_URL"] = SELENIUM_WEB_DRIVER_URL
 jwt = JWTManager(app)
 
 VERSION = "v0.1"
@@ -138,16 +140,16 @@ def get_image():
     if request.args.get("height") is not None:
         req_height = int(request.args.get("height"))
 
-    chrome_options = Options()
-    chrome_options.add_argument(f"--window-size={req_width},{req_height}")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-gpu")
+    firefox_opts = Options()
+    firefox_opts.add_argument(f"--width={req_width}")
+    firefox_opts.add_argument(f"--height={req_height}")
+    firefox_opts.add_argument("--disable-gpu")
 
     d = Xvfb(width=req_width, height=req_height)
     d.start()
-    browser = webdriver.Chrome(chrome_options=chrome_options)
+    browser = webdriver.Remote(command_executor=SELENIUM_WEB_DRIVER_URL)
 
-    browser.get("https://" + req_url)
+    browser.get(req_url)
     fname = hashlib.md5(req_url.encode("utf-8")).hexdigest()
     destination = "/tmp_images/" + fname + ".png"
 
