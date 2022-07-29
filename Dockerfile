@@ -1,22 +1,5 @@
 FROM python:latest
 
-
-RUN apt update
-
-RUN apt install -y --no-install-recommends gunicorn xvfb wget libnss3 libxss1 libsdl1.2-dev fonts-liberation libasound2 libatk-bridge2.0-0 libgtk-3-0 libnspr4 libnss3 libxtst6 lsb-release xdg-utils
-RUN wget http://ftp.us.debian.org/debian/pool/main/libi/libindicator/libindicator3-7_0.5.0-4_amd64.deb
-RUN wget http://ftp.us.debian.org/debian/pool/main/liba/libappindicator/libappindicator3-1_0.4.92-7_amd64.deb
-
-RUN apt install ./libindicator3-7_0.5.0-4_amd64.deb -y
-RUN apt install ./libappindicator3-1_0.4.92-7_amd64.deb -y
-
-WORKDIR /usr/bin
-RUN wget https://chromedriver.storage.googleapis.com/103.0.5060.134/chromedriver_linux64.zip
-RUN unzip chromedriver_linux64.zip
-RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
-    && dpkg -i google-chrome*.deb; exit 0
-
-COPY ./requirements.txt /app/requirements.txt
 RUN mkdir /app/tmp_images
 
 RUN pip install -r /app/requirements.txt
