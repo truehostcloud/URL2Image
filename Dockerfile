@@ -17,7 +17,7 @@ RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.d
     && dpkg -i google-chrome*.deb; exit 0
 
 COPY ./requirements.txt /app/requirements.txt
-RUN mkdir /tmp_images
+RUN mkdir /app/tmp_images
 
 RUN pip install -r /app/requirements.txt
 
