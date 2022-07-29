@@ -11,7 +11,7 @@ RUN apt install ./libindicator3-7_0.5.0-4_amd64.deb -y
 RUN apt install ./libappindicator3-1_0.4.92-7_amd64.deb -y
 
 WORKDIR /usr/bin
-RUN wget https://chromedriver.storage.googleapis.com/79.0.3945.36/chromedriver_linux64.zip
+RUN wget https://chromedriver.storage.googleapis.com/100.0.4896.20/chromedriver_linux64.zip
 RUN unzip chromedriver_linux64.zip
 RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
     && dpkg -i google-chrome*.deb; exit 0
