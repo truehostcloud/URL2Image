@@ -3,7 +3,7 @@ FROM python:latest
 
 RUN apt update
 
-RUN apt install -y --no-install-recommends gunicorn xvfb wget libnss3 libxss1 libsdl1.2-dev fonts-liberation libasound2 libatk-bridge2.0-0 libgtk-3-0 libnspr4 libnss3 libxtst6 lsb-release xdg-utils
+RUN apt install -y --no-install-recommends gunicorn xvfb wget libnss3 libxss1 libsdl1.2-dev fonts-liberation libasound2 libatk-bridge2.0-0 libgtk-3-0 libgdk-pixbuf2.0-0 libnspr4 libnss3 libxtst6 lsb-release xdg-utils
 RUN wget http://ftp.us.debian.org/debian/pool/main/libi/libindicator/libindicator3-7_0.5.0-4_amd64.deb
 RUN wget http://ftp.us.debian.org/debian/pool/main/liba/libappindicator/libappindicator3-1_0.4.92-7_amd64.deb
 
