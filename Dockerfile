@@ -1,6 +1,7 @@
 FROM python:latest
 
 WORKDIR /app
+COPY ./requirements.txt /app/requirements.txt
 RUN mkdir /app/tmp_images
 
 RUN pip install -r /app/requirements.txt
