@@ -11,17 +11,29 @@ from xvfbwrapper import Xvfb
 from flask import Flask, request, jsonify, send_file
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
+from flask_jwt_extended import (
+    JWTManager,
+    jwt_required,
+    create_access_token,
+    get_jwt_identity,
+)
 from PIL import Image
 
 
-from url2_image_env import JWT_SECRET_KEY, JWT_USER, JWT_PASSWORD, FLASK_DEBUG, USE_LOGIN, JWT_ACCESS_TOKEN_EXPIRES
+from url2_image_env import (
+    JWT_SECRET_KEY,
+    JWT_USER,
+    JWT_PASSWORD,
+    FLASK_DEBUG,
+    USE_LOGIN,
+    JWT_ACCESS_TOKEN_EXPIRES,
+)
 from login_util import conditional_decorator
 
 # pylint: disable=invalid-name
 app = Flask(__name__)
-app.config['JWT_SECRET_KEY'] = JWT_SECRET_KEY
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = JWT_ACCESS_TOKEN_EXPIRES
+app.config["JWT_SECRET_KEY"] = JWT_SECRET_KEY
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = JWT_ACCESS_TOKEN_EXPIRES
 jwt = JWTManager(app)
 
 VERSION = "v0.1"
@@ -54,15 +66,15 @@ def get_version():
     """
     API endpoint to retrieve version information of the service.
 
-    Example: 
-        The Api endpoint can be queried as follows:: 
+    Example:
+        The Api endpoint can be queried as follows::
 
             $ curl "localhost:5000/version"
             $ curl "localhost:5000/version?format=json"
 
-    Args: 
+    Args:
         format (str): (Optional) when format=json a json object is returned
-    Returns: 
+    Returns:
         Version information of the service either as plaintext or json. Information contains version number, git hash (one commit behind) and git branch.
     """
     req_format = request.args.get("format")
@@ -79,12 +91,12 @@ def get_version():
 
     if req_format == "json":
         response = {}
-        response['Version'] = VERSION
-        response['Hash'] = sha
-        response['Branch'] = branch
+        response["Version"] = VERSION
+        response["Hash"] = sha
+        response["Branch"] = branch
         return jsonify(response)
     elif req_format == None:
-        return f'Version: {VERSION} - Git Hash: {sha} branch: {branch}'
+        return f"Version: {VERSION} - Git Hash: {sha} branch: {branch}"
     return "Bad Request", 400
 
 
@@ -92,10 +104,10 @@ def get_version():
 @conditional_decorator(jwt_required, USE_LOGIN)
 def get_image():
     """
-    Main API endpoint. This takes in an URL and returns an image. 
+    Main API endpoint. This takes in an URL and returns an image.
 
-    Args: 
-        url (str): The URL of the target website to be downloaded. 
+    Args:
+        url (str): The URL of the target website to be downloaded.
 
         width (int): Width of the target image (default=1920)
 
@@ -105,69 +117,82 @@ def get_image():
 
         quality (int): JPEG Quality from 0 to 100 (default=60)
 
-    Returns: 
+        timeout (int): Timeout in seconds (default=60)
+
+        delay (int): Delay in seconds (default=0)
+
+        fullPage (bool): Whether to download the whole page (default=False)
+
+    Returns:
         A bytestream containing the downloaded website as image
     """
-    req_url = request.args.get('url')
+    req_url = request.args.get("url")
     if req_url is None:
         return "Bad Request", 400
 
     req_width = 1920
-    if request.args.get('width') is not None:
-        req_width = int(request.args.get('width'))
+    if request.args.get("width") is not None:
+        req_width = int(request.args.get("width"))
 
     req_height = 1080
-    if request.args.get('height') is not None:
-        req_height = int(request.args.get('height'))
+    if request.args.get("height") is not None:
+        req_height = int(request.args.get("height"))
 
     chrome_options = Options()
     chrome_options.add_argument(f"--window-size={req_width},{req_height}")
-    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-gpu")
 
     d = Xvfb(width=req_width, height=req_height)
     d.start()
     browser = webdriver.Chrome(chrome_options=chrome_options)
 
-    browser.get('https://' + req_url)
-    fname = hashlib.md5(req_url.encode('utf-8')).hexdigest()
+    browser.get("https://" + req_url)
+    fname = hashlib.md5(req_url.encode("utf-8")).hexdigest()
     destination = "/tmp_images/" + fname + ".png"
 
+    if request.args.get("fullPage") in ["True", "true"]:
+        browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     if browser.save_screenshot(destination):
         print("File saved in the destination filename")
     browser.quit()
 
     req_format = "png"
-    if request.args.get('format') is not None:
+    if request.args.get("format") is not None:
         # never trust user input
-        wanted_format = request.args.get('format')
-        if 'jpg' in wanted_format:
+        wanted_format = request.args.get("format")
+        if "jpg" in wanted_format:
             req_format = "jpg"
 
     req_quality = 60
-    if request.args.get('quality') is not None:
-        req_quality = int(request.args.get('quality'))
+    if request.args.get("quality") is not None:
+        req_quality = int(request.args.get("quality"))
 
     if req_format == "jpg":
         im = Image.open(destination)
-        rgb_im = im.convert('RGB')
+        rgb_im = im.convert("RGB")
         destination = "/tmp_images/" + fname + ".jpg"
-        rgb_im.save(destination, quality=req_quality,
-                    optimize=True, progressive=True)
+        rgb_im.save(destination, quality=req_quality, optimize=True, progressive=True)
         with open(destination, "rb") as f:
-            return send_file(io.BytesIO(f.read()), attachment_filename="url.jpg", mimetype="image/jpg")
+            return send_file(
+                io.BytesIO(f.read()),
+                attachment_filename="url.jpg",
+                mimetype="image/jpg",
+            )
 
     with open(destination, "rb") as f:
-        return send_file(io.BytesIO(f.read()), attachment_filename="url.png", mimetype="image/png")
+        return send_file(
+            io.BytesIO(f.read()), attachment_filename="url.png", mimetype="image/png"
+        )
 
     return "Image download error", 500
 
 
-@app.route("/login", methods=['POST'])
+@app.route("/login", methods=["POST"])
 def login():
     """
-    Login the user using flask_jwt_extented. Accepts json as input and returns an access token. 
-    The configuration can be set via environment variables: 
+    Login the user using flask_jwt_extented. Accepts json as input and returns an access token.
+    The configuration can be set via environment variables:
 
     - JWT_SECRET_KEY: The secret key for JWT
 
@@ -177,9 +202,9 @@ def login():
 
     - USE_LOGIN: Enables/Disables the requirement for login via JWT. Default: True
 
-    - JWT_ACCESS_TOKEN_EXPIRES: The expiration time (in seconds) of `False` for no expiration of the JWT. Default: False 
+    - JWT_ACCESS_TOKEN_EXPIRES: The expiration time (in seconds) of `False` for no expiration of the JWT. Default: False
 
-    A basic login can be achieved via:: 
+    A basic login can be achieved via::
 
         curl -H "Content-Type: application/json" -X POST -d '{"username":"user", "password":"url2image" }' "http://localhost:5000/login"
         {
@@ -196,14 +221,14 @@ def login():
 
         password: The users password
 
-    Returns: 
+    Returns:
         The generated access token.
     """
     if not request.is_json:
         return jsonify({"msg": "Missing JSON in request"}), 400
 
-    username = request.json.get('username', None)
-    password = request.json.get('password', None)
+    username = request.json.get("username", None)
+    password = request.json.get("password", None)
 
     if not username:
         return jsonify({"msg": "Missing username parameter"}), 400
@@ -219,5 +244,5 @@ def login():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0')
+    app.run(host="0.0.0.0")
 # pylint: enable=invalid-name
