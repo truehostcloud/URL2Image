@@ -7,8 +7,8 @@ RUN apt install -y --no-install-recommends gunicorn xvfb wget libnss3 libxss1 li
 RUN wget http://ftp.us.debian.org/debian/pool/main/libi/libindicator/libindicator3-7_0.5.0-4_amd64.deb
 RUN wget http://ftp.us.debian.org/debian/pool/main/liba/libappindicator/libappindicator3-1_0.4.92-7_amd64.deb
 
-RUN apt install ./libindicator3-7_0.5.0-4_amd64.deb
-RUN apt install ./libappindicator3-1_0.4.92-7_amd64.deb
+RUN apt install ./libindicator3-7_0.5.0-4_amd64.deb -y
+RUN apt install ./libappindicator3-1_0.4.92-7_amd64.deb -y
 
 WORKDIR /usr/bin
 RUN wget https://chromedriver.storage.googleapis.com/79.0.3945.36/chromedriver_linux64.zip
