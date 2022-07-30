@@ -148,6 +148,7 @@ def get_image():
     try:
         browser_driver.get(req_url)
     except (WebDriverException, InvalidArgumentException) as e:
+        browser_driver.quit()
         return f"Bad Request: {e}", 400
     fname = hashlib.md5(req_url.encode("utf-8")).hexdigest()
     destination = os.path.join(BASE_DIR, "tmp_images", fname + ".png")
