@@ -7,6 +7,7 @@ import pathlib
 import hashlib
 import time
 from selenium.webdriver.firefox.options import Options
+from selenium.common.exceptions import WebDriverException, InvalidArgumentException
 from selenium import webdriver
 from flask import Flask, request, jsonify, send_file
 from flask_limiter import Limiter
@@ -18,7 +19,6 @@ from flask_jwt_extended import (
     get_jwt_identity,
 )
 from PIL import Image
-
 
 from url2_image_env import (
     JWT_SECRET_KEY,
@@ -40,7 +40,6 @@ jwt = JWTManager(app)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 VERSION = "v0.1"
-
 
 limiter = Limiter(
     app,
@@ -93,12 +92,9 @@ def get_version():
             branch = line
 
     if req_format == "json":
-        response = {}
-        response["Version"] = VERSION
-        response["Hash"] = sha
-        response["Branch"] = branch
+        response = {"Version": VERSION, "Hash": sha, "Branch": branch}
         return jsonify(response)
-    elif req_format == None:
+    elif req_format is None:
         return f"Version: {VERSION} - Git Hash: {sha} branch: {branch}"
     return "Bad Request", 400
 
@@ -142,25 +138,27 @@ def get_image():
         req_height = int(request.args.get("height"))
     delay = 0
     if request.args.get("delay") is not None:
-        delay = int(request.args.get("delay"))/1000
+        delay = int(request.args.get("delay")) / 1000
 
     firefox_opts = Options()
     firefox_opts.add_argument(f"--width={req_width}")
     firefox_opts.add_argument(f"--height={req_height}")
     firefox_opts.add_argument("--disable-gpu")
-    browser = webdriver.Remote(command_executor=SELENIUM_WEB_DRIVER_URL)
-
-    browser.get(req_url)
+    browser_driver = webdriver.Remote(command_executor=SELENIUM_WEB_DRIVER_URL)
+    try:
+        browser_driver.get(req_url)
+    except (WebDriverException, InvalidArgumentException) as e:
+        return f"Bad Request: {e}", 400
     fname = hashlib.md5(req_url.encode("utf-8")).hexdigest()
     destination = os.path.join(BASE_DIR, "tmp_images", fname + ".png")
 
     if request.args.get("fullPage") in ["True", "true"]:
-        longest_height = browser.find_element("tag name", "body").size["height"] + 1000
-        browser.set_window_size(req_width, longest_height)
+        longest_height = browser_driver.find_element("tag name", "body").size["height"] + 1000
+        browser_driver.set_window_size(req_width, longest_height)
     time.sleep(delay)
-    if browser.save_screenshot(destination):
+    if browser_driver.save_screenshot(destination):
         print("File saved in the destination filename")
-    browser.quit()
+    browser_driver.quit()
 
     req_format = "png"
     if request.args.get("format") is not None:
