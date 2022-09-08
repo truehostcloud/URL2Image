@@ -52,8 +52,8 @@ if FLASK_DEBUG:
 print(f"USE_LOGIN: {USE_LOGIN}")
 
 
-@app.route("/")
 @conditional_decorator(jwt_required, USE_LOGIN)
+@app.route("/")
 def hello():
     """
     Return "Hello World" as a default for the "/" route
@@ -61,8 +61,8 @@ def hello():
     return "Hello World"
 
 
-@app.route("/version")
 @conditional_decorator(jwt_required, USE_LOGIN)
+@app.route("/version")
 def get_version():
     """
     API endpoint to retrieve version information of the service.
@@ -98,8 +98,8 @@ def get_version():
     return "Bad Request", 400
 
 
-@app.route("/capture")
 @conditional_decorator(jwt_required, USE_LOGIN)
+@app.route("/capture")
 def get_image():
     """
     Main API endpoint. This takes in an URL and returns an image.
@@ -179,13 +179,13 @@ def get_image():
         with open(destination, "rb") as f:
             return send_file(
                 io.BytesIO(f.read()),
-                attachment_filename="url.jpg",
+                download_name="url.jpg",
                 mimetype="image/jpg",
             )
 
     with open(destination, "rb") as f:
         return send_file(
-            io.BytesIO(f.read()), attachment_filename="url.png", mimetype="image/png"
+            io.BytesIO(f.read()), download_name="url.png", mimetype="image/png"
         )
 
     return "Image download error", 500
