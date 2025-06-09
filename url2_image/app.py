@@ -41,7 +41,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VERSION = "v0.1"
 
 limiter = Limiter(
-    key_func=get_remote_address,
+    get_remote_address,
     app,
     default_limits=["2 per minute", "1 per second"],
 )
