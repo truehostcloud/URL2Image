@@ -1,6 +1,7 @@
 """
 Main file for the url2_image app
 """
+
 import os
 import io
 import pathlib
@@ -41,8 +42,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VERSION = "v0.1"
 
 limiter = Limiter(
-    get_remote_address,
-    app,
+    app=app,
+    key_func=get_remote_address,
     default_limits=["2 per minute", "1 per second"],
 )
 
@@ -119,9 +120,7 @@ def get_image():
 
         delay (int): Delay in seconds (default=0)
 
-        fullPage (bool): Whether to download the whole page (default=False)
-
-    Returns:
+        fullPage (bool): Whether to download the whole page (default=False)    Returns:
         A bytestream containing the downloaded website as image
     """
     req_url = request.args.get("url")
@@ -135,6 +134,7 @@ def get_image():
     req_height = 1080
     if request.args.get("height") is not None:
         req_height = int(request.args.get("height"))
+
     delay = 0
     if request.args.get("delay") is not None:
         delay = int(request.args.get("delay")) / 1000
@@ -143,7 +143,9 @@ def get_image():
     firefox_opts.add_argument(f"--width={req_width}")
     firefox_opts.add_argument(f"--height={req_height}")
     firefox_opts.add_argument("--disable-gpu")
-    browser_driver = webdriver.Remote(command_executor=SELENIUM_WEB_DRIVER_URL)
+    browser_driver = webdriver.Remote(
+        command_executor=SELENIUM_WEB_DRIVER_URL, options=firefox_opts
+    )
     try:
         browser_driver.get(req_url)
     except (WebDriverException, InvalidArgumentException) as e:
@@ -153,7 +155,9 @@ def get_image():
     destination = os.path.join(BASE_DIR, "tmp_images", fname + ".png")
 
     if request.args.get("fullPage") in ["True", "true"]:
-        longest_height = browser_driver.find_element("tag name", "body").size["height"] + 1000
+        longest_height = (
+            browser_driver.find_element("tag name", "body").size["height"] + 1000
+        )
         browser_driver.set_window_size(req_width, longest_height)
     time.sleep(delay)
     if browser_driver.save_screenshot(destination):
